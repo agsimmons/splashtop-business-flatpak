@@ -1,0 +1,75 @@
+id: com.splashtop.splashtop-business
+runtime: org.freedesktop.Platform
+runtime-version: '25.08'
+sdk: org.freedesktop.Sdk
+command: /app/splashtop-wrapper.sh
+
+finish-args:
+  - --share=network
+  - --socket=x11
+  - --socket=pulseaudio
+  - --filesystem=host
+  - --env=LD_LIBRARY_PATH=/app/usr/lib:/app/opt/splashtop-business/lib/msquic
+
+modules:
+  - name: keyutils
+    buildsystem: simple
+    build-commands:
+      - "make --jobs=${FLATPAK_BUILDER_N_JOBS}"
+      - "make DESTDIR=${FLATPAK_DEST} LIBDIR=/usr/lib BINDIR=/usr/bin SBINDIR=/usr/sbin install"
+    sources:
+      - type: git
+        url: git://git.kernel.org/pub/scm/linux/kernel/git/dhowells/keyutils.git
+        tag: v1.6.3
+
+  - name: xdotools
+    buildsystem: simple
+    build-commands:
+      - "make --jobs=${FLATPAK_BUILDER_N_JOBS}"
+      - "make DESTDIR=${FLATPAK_DEST} PREFIX=/usr install"
+    sources:
+      - type: git
+        url: https://github.com/jordansissel/xdotool.git
+        tag: v3.20211022.1
+
+  - name: qtbase
+    buildsystem: simple
+    build-commands:
+      - "./configure -opensource -confirm-license -prefix ${FLATPAK_DEST}/usr -nomake examples"
+      - "make --jobs=${FLATPAK_BUILDER_N_JOBS}"
+      - "make install"
+    sources:
+      - type: git
+        url: https://github.com/qt/qtbase.git
+        tag: v5.15.18-lts-lgpl
+
+  - name: ffmpeg
+    buildsystem: simple
+    build-commands:
+      # - "--enable-lto"
+      - "./configure --prefix=/usr --disable-static --enable-shared --disable-programs --disable-doc --enable-gpl"
+      - "make --jobs=${FLATPAK_BUILDER_N_JOBS}"
+      - "make DESTDIR=${FLATPAK_DEST} install"
+    sources:
+      - type: git
+        url: https://github.com/FFmpeg/FFmpeg.git
+        tag: n7.1.2
+
+  - name: splashtop-business
+    buildsystem: simple
+    build-commands:
+      - "ar x splashtop-business_Ubuntu_amd64.deb"
+      - "tar xf data.tar.xz -C ${FLATPAK_DEST}"
+      - "ln -s ~/.var/app/com.splashtop.splashtop-business/splashtop/config ${FLATPAK_DEST}/opt/splashtop-business/config"
+      - "ln -s ~/.var/app/com.splashtop.splashtop-business/splashtop/dump ${FLATPAK_DEST}/opt/splashtop-business/dump"
+      - "ln -s ~/.var/app/com.splashtop.splashtop-business/splashtop/log ${FLATPAK_DEST}/opt/splashtop-business/log"
+      - "chmod +x splashtop-wrapper.sh"
+      - "mv splashtop-wrapper.sh ${FLATPAK_DEST}"
+    sources:
+      - type: archive
+        url: https://download.splashtop.com/linuxclient/splashtop-business_Ubuntu_v3.7.4.0_amd64.tar.gz
+        sha256: eecb6de619382c09b4fa55d0f866c6a15f95f42126d43484011e2fb4fb105fb4
+        dest-filename: splashtop-business.tar.gz
+        strip-components: 0
+      - type: file
+        path: splashtop-wrapper.sh
