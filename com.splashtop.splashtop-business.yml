@@ -1,9 +1,12 @@
 id: com.splashtop.splashtop-business
 runtime: org.freedesktop.Platform
 runtime-version: '25.08'
-sdk: org.freedesktop.Sdk
 command: /app/splashtop-wrapper.sh
 
+sdk: org.freedesktop.Sdk
+build-options:
+  env:
+    MAKEFLAGS: "-j${FLATPAK_BUILDER_N_JOBS}"
 finish-args:
   - --share=network
   - --socket=x11
@@ -15,8 +18,8 @@ modules:
   - name: keyutils
     buildsystem: simple
     build-commands:
-      - "make --jobs=${FLATPAK_BUILDER_N_JOBS}"
-      - "make DESTDIR=${FLATPAK_DEST} LIBDIR=/usr/lib BINDIR=/usr/bin SBINDIR=/usr/sbin install"
+      - "make"
+      - "make DESTDIR=${FLATPAK_DEST} BINDIR=/usr/bin SBINDIR=/usr/sbin LIBDIR=/usr/lib install"
     sources:
       - type: git
         url: git://git.kernel.org/pub/scm/linux/kernel/git/dhowells/keyutils.git
@@ -25,8 +28,8 @@ modules:
   - name: xdotools
     buildsystem: simple
     build-commands:
-      - "make --jobs=${FLATPAK_BUILDER_N_JOBS}"
-      - "make DESTDIR=${FLATPAK_DEST} PREFIX=/usr install"
+      - "make"
+      - "make PREFIX=${FLATPAK_DEST}/usr install"
     sources:
       - type: git
         url: https://github.com/jordansissel/xdotool.git
@@ -35,21 +38,89 @@ modules:
   - name: qtbase
     buildsystem: simple
     build-commands:
-      - "./configure -opensource -confirm-license -prefix ${FLATPAK_DEST}/usr -nomake examples"
-      - "make --jobs=${FLATPAK_BUILDER_N_JOBS}"
+      - "./configure -prefix ${FLATPAK_DEST}/usr -opensource -confirm-license -nomake tools -nomake examples"
+      - "make"
       - "make install"
     sources:
       - type: git
         url: https://github.com/qt/qtbase.git
         tag: v5.15.18-lts-lgpl
 
-  - name: ffmpeg
+  - name: libx264
     buildsystem: simple
     build-commands:
-      # - "--enable-lto"
-      - "./configure --prefix=/usr --disable-static --enable-shared --disable-programs --disable-doc --enable-gpl"
-      - "make --jobs=${FLATPAK_BUILDER_N_JOBS}"
-      - "make DESTDIR=${FLATPAK_DEST} install"
+      - "./configure --prefix=${FLATPAK_DEST}/usr --disable-cli --enable-shared --enable-pic --enable-lto --disable-avs"
+      - "make"
+      - "make install"
+    sources:
+      - type: git
+        url: https://code.videolan.org/videolan/x264.git
+        commit: b35605ace3ddf7c1a5d67a2eb553f034aef41d55
+
+  - name: libvpx
+    buildsystem: simple
+    build-commands:
+      - "./configure --prefix=${FLATPAK_DEST}/usr --disable-install-docs --disable-install-srcs --disable-install-bins --disable-unit-tests --enable-pic --enable-postproc --enable-runtime-cpu-detect --enable-shared --enable-vp8 --enable-vp9 --enable-vp9-highbitdepth --enable-vp9-temporal-denoising"
+      - "make"
+      - "make install"
+    sources:
+      - type: git
+        url: https://github.com/webmproject/libvpx.git
+        tag: v1.15.2
+  - name: ffmpeg
+    buildsystem: simple
+    build-options:
+      env:
+        PKG_CONFIG_PATH: "/app/usr/lib/pkgconfig"
+        CFLAGS: "-I/app/usr/include"
+        LDFLAGS: "-L/app/usr/lib"
+
+    build-commands:
+      - |
+        ./configure \
+        --prefix=${FLATPAK_DEST}/usr \
+        --disable-debug \
+        --disable-programs \
+        --disable-static \
+        --disable-stripping \
+        --enable-lto \
+        --enable-fontconfig \
+        --enable-frei0r \
+        --enable-gmp \
+        --enable-gnutls \
+        --enable-gpl \
+        --enable-ladspa \
+        --enable-libaom \
+        --enable-libdav1d \
+        --enable-libdrm \
+        --enable-libfreetype \
+        --enable-libfribidi \
+        --enable-libharfbuzz \
+        --enable-libjack \
+        --enable-libjxl \
+        --enable-libmp3lame \
+        --enable-libopenjpeg \
+        --enable-libopus \
+        --enable-libpulse \
+        --enable-librsvg \
+        --enable-libspeex \
+        --enable-libsvtav1 \
+        --enable-libtheora \
+        --enable-libv4l2 \
+        --enable-libvorbis \
+        --enable-libvpx \
+        --enable-libwebp \
+        --enable-libx264 \
+        --enable-libxcb \
+        --enable-libxml2 \
+        --enable-nvdec \
+        --enable-nvenc \
+        --enable-opengl \
+        --enable-shared \
+        --enable-version3 \
+        --enable-vulkan
+      - "make"
+      - "make install"
     sources:
       - type: git
         url: https://github.com/FFmpeg/FFmpeg.git
