@@ -18,4 +18,4 @@ The Flatpak package is currently only set up to use x11. Running the application
 If you have any modification that improve this, please submit a pull request. Thanks!
 
 ## License
-The contents of this repo are licenced under the GPL-3.0-only license. This does not apply to any of the modules that are pulled in during build.
+The contents of this repo are licenced under the CC0 license. This does not apply to any of the modules that are pulled in during build.
