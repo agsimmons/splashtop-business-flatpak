@@ -4,9 +4,13 @@ runtime-version: '25.08'
 command: /app/splashtop-wrapper.sh
 
 sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
 build-options:
+  append-path: /usr/lib/sdk/rust-stable/bin
   env:
     MAKEFLAGS: "-j${FLATPAK_BUILDER_N_JOBS}"
+
 finish-args:
   - --share=network
   - --socket=x11
@@ -67,6 +71,19 @@ modules:
       - type: git
         url: https://github.com/webmproject/libvpx.git
         tag: v1.15.2
+
+  - name: rav1e
+    buildsystem: simple
+    build-commands:
+      - |
+        export CARGO_HOME="${FLATPAK_BUILDER_BUILDDIR}/cargo"
+        cargo cinstall --release --prefix=${FLATPAK_DEST}/usr --libdir=${FLATPAK_DEST}/usr/lib
+    sources:
+      - type: git
+        url: https://github.com/xiph/rav1e.git
+        tag: v0.8.1
+      - cargo-sources-rav1e-0-8-1.json
+
   - name: ffmpeg
     buildsystem: simple
     build-options:
@@ -74,7 +91,6 @@ modules:
         PKG_CONFIG_PATH: "/app/usr/lib/pkgconfig"
         CFLAGS: "-I/app/usr/include"
         LDFLAGS: "-L/app/usr/lib"
-
     build-commands:
       - |
         ./configure \
@@ -102,6 +118,7 @@ modules:
         --enable-libopenjpeg \
         --enable-libopus \
         --enable-libpulse \
+        --enable-librav1e \
         --enable-librsvg \
         --enable-libspeex \
         --enable-libsvtav1 \
